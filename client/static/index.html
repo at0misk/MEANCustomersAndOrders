@@ -1,0 +1,200 @@
+<html ng-app="customers_app">
+<head>
+  <title>Orders and Customers</title>
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <!-- require angular -->
+  <script src='https://ajax.googleapis.com/ajax/libs/angularjs/1.3.5/angular.min.js'/></script>
+  <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.5/angular-route.min.js"></script>
+  <!-- load momentJS (required for angular-moment) -->
+<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.9.0/moment.min.js"></script>
+<!-- load angular-moment -->
+<script src="//cdnjs.cloudflare.com/ajax/libs/angular-moment/0.9.0/angular-moment.min.js"></script>
+  <script>
+  // PUT ANGULAR CODE HERE
+  // Let's create our angular module
+  var customers_app = angular.module('customers_app', ['ngRoute', 'angularMoment']);
+  // create the customerFactory
+  customers_app.factory('customerFactory', function($http) {
+  var factory = {};
+  var customers = [];
+  //Restful syntax: index = get all that object
+  factory.index = function(callback) {
+    $http.get('/customers').success(function(output) {
+    customers = output;
+    callback(customers);
+    }) 
+  }
+  // note the use of callbacks!
+  // Restful syntax: create = add one to that object
+  factory.create = function(newcustomer, callback) {
+    $http.post('/customers', newcustomer).success(function(){
+      callback();
+    })
+    // customers.push({name: info.name, age: info.age});
+    // callback(customers);
+  }
+  factory.delete = function(deletecustomer, callback){
+    console.log(deletecustomer._id);
+    $http.delete('/customers/' + deletecustomer._id).success(function(){
+      callback();
+    })
+  }
+  return factory;
+});
+  //Product Factory
+  customers_app.factory('productFactory', function($http) {
+  var factory = {};
+  var products = [];
+  factory.index = function(callback){
+  $http.get('/products').success(function(output) {
+    products = output;
+    callback(products);
+    })
+  }
+  factory.create = function(newProduct, callback){
+    $http.post('/products', newProduct).success(function(){
+      callback();
+    })
+  }
+  return factory; 
+  });
+  customers_app.factory('orderFactory', function($http) {
+  var factory = {};
+  var orders = [];
+  factory.index = function(callback){
+  $http.get('/orders').success(function(output) {
+    orders = output;
+    callback(orders);
+    })
+  }
+  factory.create = function(newOrder, callback) {
+    $http.post('/orders', newOrder).success(function(){
+      callback();
+    })
+    console.log(newOrder);
+    $http.put('/products', newOrder).success(function(){
+      callback();
+    })
+    // customers.push({name: info.name, age: info.age});
+    // callback(customers);
+  }
+  return factory; 
+  });
+  customers_app.config(function ($routeProvider) {
+    $routeProvider
+        .when('/',{
+            templateUrl: 'partials/customers.html',
+            controller: 'customersController'
+        })
+        .when('/orders',{
+            templateUrl: 'partials/orders.html',
+            controller: 'ordersController'
+        })
+        .when('/dashboard',{
+            templateUrl: 'partials/dashboard.html',
+            controller: 'dashController'
+        })
+        .when('/products',{
+            templateUrl: 'partials/products.html',
+            controller: 'ordersController'
+        })
+        .otherwise({
+          redirectTo: '/'
+        });
+  });
+  // Now let's create a controller with some hardcoded data!
+  customers_app.controller('customersController', function($scope, customerFactory) {
+  // This line goes at the top of the controller callback because the minute the controller gets called upon we want to create the $scope.customers array
+  customerFactory.index(function(data) {
+  $scope.customers = data;
+  // anything else that you want to happen after storing customers to $scope
+  });
+  $scope.addcustomer = function() {
+    var dupes = false;
+        console.log($scope.customers.length);
+    for(var i = 0; i<$scope.customers.length; i++){
+      if($scope.customers[i].name == $scope.new_customer.name){
+        $scope.error = "User already exists!";
+        dupes = true;
+      }
+      console.log($scope.customers[i].name);
+    }
+    if(dupes == false){
+    customerFactory.create($scope.new_customer, function(){
+      customerFactory.index(function(data){
+        $scope.customers = data;
+        $scope.new_customer = {};
+        $scope.error = "";
+      })
+    });
+    }
+    // $scope.customers.push({name: $scope.new_customer.name, age: $scope.new_customer.age});
+    // $scope.new_customer = {};
+    }
+  $scope.delete = function(data){
+    customerFactory.delete(data, function(){
+      customerFactory.index(function(data){
+        $scope.customers = data;
+      })
+    });
+  }
+  })
+  customers_app.controller('ordersController', function($scope, customerFactory, productFactory, orderFactory){
+    $scope.new_order = {};
+    customerFactory.index(function(data) {
+      $scope.customers = data;
+      $scope.new_order.customerName = $scope.customers[1].name;
+      $scope.new_order.quantity = 1;
+      // anything else that you want to happen after storing customers to $scope
+    });
+    productFactory.index(function(data) {
+      $scope.products = data;
+      $scope.new_order.productName = $scope.products[1].name;
+      // anything else that you want to happen after storing customers to $scope
+    });
+    orderFactory.index(function(data) {
+      $scope.orders = data;
+      // anything else that you want to happen after storing customers to $scope
+    });
+    $scope.addOrder = function(){
+    orderFactory.create($scope.new_order, function(){
+      orderFactory.index(function(data){
+        $scope.orders = data;
+        $scope.new_order = {};
+      })
+    });
+  }
+  })
+  customers_app.controller('dashController',  function($scope, customerFactory, productFactory, orderFactory){
+    var vm = this;
+    vm.time = new Date();
+    customerFactory.index(function(data) {
+      $scope.customers = data;
+    });
+    productFactory.index(function(data) {
+      $scope.products = data;
+    });
+    orderFactory.index(function(data) {
+      $scope.orders = data;
+    });
+    $scope.addProduct = function(){
+    productFactory.create($scope.new_product, function(){
+      productFactory.index(function(data){
+        $scope.products = data;
+        $scope.new_product = {};
+      })
+    });
+  }
+  })
+  //MAKE THE DASHBOARD CONTROLLER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+  </script>
+</head>
+<!-- everything in the body is going to use the customers controller (this gives us access to the customers controller $scope) -->
+<body>
+<a href="#/dashboard">Dashboard</a> | <a href="#/products">Products</a> | <a href="#/">Customers</a> | <a href="#/orders">Orders</a>
+<div ng-view=''>
+</div>
+</body>
+</html>

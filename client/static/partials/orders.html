@@ -1,0 +1,26 @@
+<h1>Add an order</h1>
+  <!-- objects and properties nothing scary -->
+  Customer: <select ng-model="new_order.customerName" ng-options="customer.name as customer.name for customer in customers">
+  </select>
+  <!-- addcustomer() is a method we are going to make in the angular controller -->
+  <select ng-model="new_order.productName" ng-options="product.name as product.name for product in products">
+  </select>
+    <input type="number" ng-model="new_order.quantity" min=1 max=50 placeholder=1>
+  <input type="submit" ng-click="addOrder()">
+  {{ error }}
+  <h1>Orders</h1>
+  <input type="text" ng-model="filter_name" placeholder="filter">
+  {{filter_name}}
+  <table>
+  <thead>
+    <tr><td>Customer Name</td><td>Product</td><td>Quantity</td><td>Created At</td></tr>
+  </thead>
+  <tbody>
+    <tr ng-repeat="order in orders | filter: filter_name">
+        <td>{{order.customerName}}</td>
+        <td>{{order.productName}}</td>
+        <td>{{order.quantity}}</td>
+        <td>{{order.created_at | date : format : timezone}}</td>
+    </tr>
+  </tbody>
+  </table>

@@ -1,0 +1,18 @@
+*{
+	font-family: helvetica;
+}
+.outer{
+	margin-left:10px;
+}
+.imageDiv{
+	width:100px;
+	height:100px;
+	background-color:green;
+	display:inline-block;
+}
+#productContainer{
+	display:inline-block;
+}
+.filter{
+	vertical-align: top;
+}
